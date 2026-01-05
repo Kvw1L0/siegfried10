@@ -2,102 +2,355 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Page - Fondo.png</title>
+    <title>ESCAPE ROOM - PANTALLA PÚBLICA (V. FINAL)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <style>
-        /* Reset básico */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* === ESTÉTICA GENERAL Y CRT === */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; background: #000; 
+            overflow: hidden; font-family: 'Orbitron', sans-serif; user-select: none; 
+            transition: transform 0.05s; /* Para el Screen Shake */
         }
 
-        body, html {
-            height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Efecto Scanlines CRT */
+        body::after {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999; background-size: 100% 3px, 3px 100%; pointer-events: none; opacity: 0.6;
         }
+        /* Efecto Viñeta Oscura */
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.8) 100%);
+            z-index: 998; pointer-events: none;
+        }
+        
+        /* CAPA DE VIDEO (FONDO) */
+        #video-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s; }
+        .visible { opacity: 1; z-index: 2; }
+        .hidden { opacity: 0; z-index: 1; }
 
-        /* Contenedor Principal (Hero) */
-        .hero-section {
-            /* Aquí cargamos tu imagen */
-            background-image: url('fondo.jpg'); 
-            
-            /* Ajustes para que la imagen cubra todo y se centre */
-            height: 100%; 
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
-            position: relative;
+        /* CAPA DE JUEGOS (COMMON) */
+        .game-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; 
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(2px);
         }
+        h1, h2 { text-shadow: 0 0 20px currentColor; letter-spacing: 2px; }
 
-        /* Capa oscura superpuesta (Overlay) */
-        /* Esto ayuda a leer el texto si la imagen es muy clara o caótica */
-        .overlay {
-            background-color: rgba(0, 0, 0, 0.5); /* Negro al 50% de opacidad */
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            color: white;
-            padding: 20px;
-        }
+        /* 1. BATALLA DE RUIDO */
+        .battle-stage { display: flex; width: 80%; height: 50vh; gap: 5vw; align-items: flex-end; }
+        .battle-col { flex: 1; height: 100%; background: rgba(20,20,30,0.6); border: 4px solid #fff; border-radius: 15px; position: relative; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+        .bar { width: 100%; height: 0%; transition: height 0.1s linear; box-shadow: 0 0 30px currentColor; }
+        #bar-a { background: linear-gradient(to top, #003b00, #39ff14); color: #39ff14; }
+        #bar-b { background: linear-gradient(to top, #4a0000, #ff3131); color: #ff3131; }
+        .score-num { position: absolute; top: -100px; width: 100%; text-align: center; font-size: 6vw; font-weight:900; }
+        
+        /* 2. TURBINA HUMANA */
+        .turbine-container { width: 300px; height: 60vh; border: 8px solid #00f3ff; border-radius: 50px; position: relative; overflow: hidden; background: #111; box-shadow: 0 0 50px #00f3ff; }
+        .turbine-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: repeating-linear-gradient(45deg, #00f3ff, #00f3ff 20px, #0099ff 20px, #0099ff 40px); transition: height 0.1s; animation: turbineAnim 2s linear infinite; }
+        @keyframes turbineAnim { from { background-position: 0 0; } to { background-position: 0 100%; } }
+        .turbine-msg { font-size: 4vw; color: #00f3ff; margin-bottom: 30px; text-transform: uppercase; animation: pulse 0.5s infinite alternate; }
 
-        /* Estilos del contenido */
-        .content h1 {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-        }
+        /* 3. REACTOR INESTABLE */
+        .reactor-bar { width: 80%; height: 120px; border: 6px solid #fff; border-radius: 60px; position: relative; overflow: hidden; background: #222; box-shadow: 0 0 40px white; }
+        .reactor-safe { position: absolute; left: 45%; width: 10%; height: 100%; background: #39ff14; opacity: 0.8; box-shadow: 0 0 30px #39ff14; }
+        .reactor-needle { position: absolute; left: 0%; width: 8px; height: 100%; background: #ff00ff; box-shadow: 0 0 30px #ff00ff; transition: left 0.05s linear; }
 
-        .content p {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            max-width: 600px;
-            line-height: 1.6;
-        }
+        /* 4. FLAPPY BIRD (SONAR) */
+        .sonar-ship { position: absolute; left: 10%; bottom: 50%; width: 100px; height: 50px; background: yellow; border-radius: 25px; box-shadow: 0 0 30px yellow; transition: bottom 0.1s linear, background 0.2s; }
+        .sonar-zone { position: absolute; right: 0; bottom: 50%; width: 100%; height: 30%; background: rgba(0, 243, 255, 0.15); border-top: 4px solid #00f3ff; border-bottom: 4px solid #00f3ff; z-index: -1; box-shadow: 0 0 50px #00f3ff inset; }
+        
+        /* 5. SEMÁFORO TERROR */
+        .eye { width: 250px; height: 250px; border-radius: 50%; background: #39ff14; box-shadow: 0 0 80px #39ff14; margin-bottom: 50px; transition: 0.3s; border: 5px solid white; }
+        .eye.red { background: #ff0000; box-shadow: 0 0 150px #ff0000; transform: scale(1.1); animation: shake 0.5s infinite; }
+        .traffic-progress { width: 70%; height: 50px; border: 4px solid white; border-radius: 25px; overflow: hidden; background:#222; }
+        .traffic-fill { height: 100%; width: 0%; background: #00f3ff; transition: width 0.1s linear; box-shadow: 0 0 30px #00f3ff; }
 
-        /* Botón de llamada a la acción */
-        .cta-button {
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            background-color: #ff6b6b; /* Color de ejemplo */
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.3s ease, transform 0.2s;
-            font-weight: bold;
-        }
+        /* 6. FRANCOTIRADOR (GRID) */
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 80%; height: 70%; }
+        .grid-cell { border: 4px solid rgba(255,255,255,0.4); display: flex; justify-content: center; align-items: center; font-size: 5vw; color: rgba(255,255,255,0.6); font-family: 'VT323', monospace; text-shadow: 0 0 10px currentColor; }
+        .cell-found { background: rgba(57, 255, 20, 0.7) !important; box-shadow: 0 0 80px #39ff14 inset !important; color: white !important; border-color: #39ff14 !important; animation: pulse 0.2s infinite alternate; }
 
-        .cta-button:hover {
-            background-color: #ff4757;
-            transform: scale(1.05);
-        }
+        /* 7. HACKEO PATRONES */
+        .pattern-screen { width: 100%; height: 100%; position: absolute; top:0; left:0; display: flex; justify-content: center; align-items: center; z-index: 60; pointer-events: none; }
+        .flash-color { width: 100%; height: 100%; opacity: 0; transition: opacity 0.2s; }
+        .code-msg { font-size: 10vw; color: white; z-index: 70; text-shadow: 0 0 40px black; font-weight: 900; }
 
-        /* Adaptación para móviles */
-        @media (max-width: 768px) {
-            .content h1 { font-size: 2.5rem; }
-            .content p { font-size: 1.1rem; }
-        }
+        /* UTILIDADES */
+        @keyframes pulse { 0% { opacity: 0.7; transform: scale(1); } 100% { opacity: 1; transform: scale(1.05); } }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        #winner-text { position: absolute; top: 50%; left:50%; transform:translate(-50%, -50%); font-size: 8vw; color: #39ff14; font-weight: 900; z-index: 100; text-shadow: 0 0 50px black, 0 0 20px #39ff14; display: none; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="hero-section">
-        <div class="overlay">
-            <div class="content">
-                
-             
+    <div id="video-layer">
+        <video id="video1" class="visible" playsinline muted></video>
+        <video id="video2" class="hidden" playsinline muted></video>
+    </div>
+
+    <div id="winner-text">¡SISTEMA HACKEADO!</div>
+    
+    <div id="game-hack" class="pattern-screen">
+        <div id="flash-screen" class="flash-color"></div>
+        <div id="hack-msg" class="code-msg"></div>
+    </div>
+
+    <div id="game-batalla" class="game-overlay">
+        <h1 style="color:white; font-size: 4vw;">BATALLA DE PÁNICO</h1>
+        <div class="battle-stage">
+            <div class="battle-col" style="color:#39ff14">
+                <div id="score-a" class="score-num">0</div>
+                <div id="bar-a" class="bar"></div>
+                <h2 style="text-align:center; margin-bottom:20px;">OPCIÓN A</h2>
+            </div>
+            <div class="battle-col" style="color:#ff3131">
+                <div id="score-b" class="score-num">0</div>
+                <div id="bar-b" class="bar"></div>
+                <h2 style="text-align:center; margin-bottom:20px;">OPCIÓN B</h2>
             </div>
         </div>
     </div>
 
+    <div id="game-turbina" class="game-overlay">
+        <div class="turbine-msg">¡APLAUDAN RÁPIDO! (CARGANDO...)</div>
+        <div class="turbine-container">
+            <div id="turbine-fill" class="turbine-fill"></div>
+        </div>
+        <h2 id="turbine-pct" style="color:#00f3ff; font-size: 6vw; margin-top: 30px;">0%</h2>
+    </div>
+
+    <div id="game-reactor" class="game-overlay">
+        <h1 style="color:white; margin-bottom:60px; font-size: 5vw;">GRITA "YA" EN EL VERDE</h1>
+        <div class="reactor-bar">
+            <div class="reactor-safe"></div>
+            <div id="reactor-needle" class="reactor-needle"></div>
+        </div>
+    </div>
+
+    <div id="game-sonar" class="game-overlay" style="background: rgba(0,20,40,0.85);">
+        <div style="position: absolute; top:30px; left:30px; color:#00f3ff; font-size:3vw; font-weight:bold;">INTEGRIDAD: <span id="sonar-hp">100</span>%</div>
+        <div id="sonar-zone" class="sonar-zone"></div>
+        <div id="sonar-ship" class="sonar-ship"></div>
+    </div>
+
+    <div id="game-semaforo" class="game-overlay">
+        <div id="eye" class="eye"></div>
+        <h2 id="eye-msg" style="color:#39ff14; font-size: 4vw; margin-bottom: 40px;">¡CORRAN! (RUIDO)</h2>
+        <div class="traffic-progress">
+            <div id="traffic-fill" class="traffic-fill"></div>
+        </div>
+    </div>
+
+    <div id="game-grid" class="game-overlay" style="background:rgba(0,0,0,0.3);">
+        <h2 style="color:white; margin-bottom: 30px;">BUSQUEN EL OBJETIVO</h2>
+        <div class="grid-container">
+            <div id="cell-0" class="grid-cell">A1</div><div id="cell-1" class="grid-cell">A2</div><div id="cell-2" class="grid-cell">A3</div>
+            <div id="cell-3" class="grid-cell">B1</div><div id="cell-4" class="grid-cell">B2</div><div id="cell-5" class="grid-cell">B3</div>
+        </div>
+    </div>
+
+    <script>
+        // === 0. CONFIGURACIÓN DE ARCHIVOS ===
+        const STORY_CLIPS = {
+            "intro_loop": "./videos/loop_intro.mp4", 
+            "nivel1_exito": "./videos/nivel1_exito.mp4",
+            "nivel1_fail": "./videos/nivel1_fail.mp4"
+            // Agrega más aquí...
+        };
+
+        const SFX = {
+            alarm: new Audio('./sfx/alarm.mp3'),
+            success: new Audio('./sfx/success.mp3'),
+            fail: new Audio('./sfx/fail.mp3')
+        };
+
+        // === 1. SISTEMA BASE (Audio, Video, Comunicación) ===
+        const channel = new BroadcastChannel('escape_room_master');
+        let audioContext, analyser, microphone, scriptProcessor;
+        let sensitivity = 1.5;
+        window.currentVolume = 0; // Volumen suavizado
+        window.instantVolume = 0; // Volumen pico (transitorio)
+
+        // Motor de Video (Double Buffering)
+        const player1 = document.getElementById('video1');
+        const player2 = document.getElementById('video2');
+        let activePlayer = player1;
+
+        function playClip(clipName, loop = false) {
+            const url = STORY_CLIPS[clipName];
+            if(!url) return console.warn("Video no encontrado:", clipName);
+            const nextPlayer = (activePlayer === player1) ? player2 : player1;
+            nextPlayer.src = url; nextPlayer.loop = loop;
+            nextPlayer.oncanplay = () => {
+                nextPlayer.play();
+                nextPlayer.classList.remove('hidden'); nextPlayer.classList.add('visible');
+                activePlayer.classList.remove('visible'); activePlayer.classList.add('hidden');
+                setTimeout(() => { activePlayer.pause(); }, 100);
+                activePlayer = nextPlayer;
+            };
+        }
+
+        // Sistema de Audio y Efectos Físicos (Screen Shake)
+        async function initAudio() {
+            try {
+                // Intentar bloquear la pantalla para que no se apague
+                if ('wakeLock' in navigator) await navigator.wakeLock.request('screen').catch(e => console.log("WakeLock falló"));
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+                analyser.smoothingTimeConstant = 0.4; analyser.fftSize = 1024;
+                microphone.connect(analyser); analyser.connect(scriptProcessor); scriptProcessor.connect(audioContext.destination);
+                
+                scriptProcessor.onaudioprocess = function(e) {
+                    const array = new Uint8Array(analyser.frequencyBinCount);
+                    analyser.getByteFrequencyData(array);
+                    let values = 0; for (let i = 0; i < array.length; i++) values += array[i];
+                    let rawVol = Math.round((values / array.length) * sensitivity);
+                    window.instantVolume = rawVol;
+                    window.currentVolume += (rawVol - window.currentVolume) * 0.15;
+
+                    // SCREEN SHAKE DINÁMICO
+                    let shake = 0;
+                    if(window.currentVolume > 50) shake = (window.currentVolume - 50) / 5;
+                    const x = (Math.random() - 0.5) * shake; const y = (Math.random() - 0.5) * shake;
+                    document.body.style.transform = `translate(${x}px, ${y}px)`;
+                };
+                playSound('success'); // Feedback de que el audio inició
+            } catch (e) { console.error("Error micro", e); alert("Error de Micrófono. Revisa permisos."); }
+        }
+
+        function playSound(name) {
+            if(SFX[name]) { SFX[name].currentTime = 0; SFX[name].play().catch(e=>{}); }
+        }
+
+        // === 2. LÓGICA DE JUEGOS ===
+        let gameLoopId;
+        
+        function hideAll() {
+            cancelAnimationFrame(gameLoopId);
+            document.querySelectorAll('.game-overlay:not(.pattern-screen)').forEach(el => el.style.display = 'none');
+            document.getElementById('winner-text').style.display = 'none';
+            document.body.style.transform = 'none'; // Reset shake
+        }
+
+        // [JUEGOS] Lógica de bucles de animación
+        let turbineVal = 0;
+        function loopTurbina() {
+            if (window.instantVolume > 35) turbineVal += 0.6; else turbineVal -= 0.3;
+            if(turbineVal < 0) turbineVal = 0; if(turbineVal > 100) turbineVal = 100;
+            document.getElementById('turbine-fill').style.height = turbineVal + '%';
+            document.getElementById('turbine-pct').innerText = Math.floor(turbineVal) + '%';
+            if(turbineVal >= 100) finishGame(true, "¡ENERGÍA AL MÁXIMO!"); else gameLoopId = requestAnimationFrame(loopTurbina);
+        }
+
+        let needlePos = 0, needleDir = 1;
+        function loopReactor() {
+            needlePos += 1.8 * needleDir; if (needlePos > 100 || needlePos < 0) needleDir *= -1;
+            document.getElementById('reactor-needle').style.left = needlePos + '%';
+            gameLoopId = requestAnimationFrame(loopReactor);
+        }
+
+        let shipY = 50, zoneY = 50, zoneDir = 1, hp = 100;
+        function loopSonar() {
+            zoneY += 0.7 * zoneDir; if (zoneY > 85 || zoneY < 15) zoneDir *= -1;
+            document.getElementById('sonar-zone').style.bottom = (zoneY - 15) + '%';
+            let targetY = window.currentVolume * 1.2; // Un poco de ganancia
+            shipY += (targetY - shipY) * 0.1;
+            document.getElementById('sonar-ship').style.bottom = shipY + '%';
+            if (shipY > zoneY - 18 && shipY < zoneY + 18) document.getElementById('sonar-ship').style.background = "#39ff14";
+            else { document.getElementById('sonar-ship').style.background = "red"; hp -= 0.5; }
+            document.getElementById('sonar-hp').innerText = Math.floor(hp);
+            if(hp <= 0) finishGame(false, "¡NAVE DESTRUIDA!"); else gameLoopId = requestAnimationFrame(loopSonar);
+        }
+
+        let trafficVal = 0, isRed = false;
+        function loopSemaforo() {
+            const vol = window.currentVolume;
+            if(isRed) { if(vol > 15) { trafficVal -= 3; document.getElementById('traffic-fill').style.background="red"; } } 
+            else { if(vol > 25) { trafficVal += 0.4; document.getElementById('traffic-fill').style.background="#00f3ff"; } }
+            if(trafficVal < 0) trafficVal = 0; if(trafficVal > 100) { trafficVal = 100; finishGame(true, "¡ESCAPE LOGRADO!"); return; }
+            document.getElementById('traffic-fill').style.width = trafficVal + '%';
+            gameLoopId = requestAnimationFrame(loopSemaforo);
+        }
+
+        // [UTILIDADES] Finalización y Feedback visual
+        function finishGame(win, text) {
+            cancelAnimationFrame(gameLoopId);
+            playSound(win ? 'success' : 'fail');
+            const w = document.getElementById('winner-text');
+            w.innerText = text; w.style.color = win ? "#39ff14" : "#ff3131";
+            w.style.display = 'block';
+            if(win) confetti({ particleCount: 200, spread: 100, origin: {y:0.6} });
+            
+            // AUTOMATIZACIÓN EJEMPLO: Si ganan, poner video de éxito a los 4s
+            if(win) setTimeout(() => { playClip('nivel1_exito', false); }, 4000);
+            
+            setTimeout(() => { w.style.display = 'none'; hideAll(); }, 4000);
+        }
+
+        function flashColor(color, text) {
+            const screen = document.getElementById('flash-screen');
+            const msg = document.getElementById('hack-msg');
+            screen.style.backgroundColor = color; screen.style.opacity = 0.8;
+            msg.innerText = text;
+            playSound('click');
+            setTimeout(() => { screen.style.opacity = 0; msg.innerText = ""; }, 700);
+        }
+
+        // === 3. RECEPCIÓN DE COMANDOS (CEREBRO) ===
+        channel.onmessage = (e) => {
+            const cmd = e.data;
+            if (cmd.act === 'INIT_AUDIO') initAudio();
+            if (cmd.act === 'RESET') hideAll();
+            if (cmd.act === 'PLAY_VIDEO') playClip(cmd.name, cmd.loop);
+            if (cmd.act === 'SET_SENS') sensitivity = cmd.val;
+
+            // Comandos de Juegos (Activan alarma al iniciar)
+            if(['SHOW_BATTLE','START_TURBINE','START_REACTOR','START_SONAR','START_SEMAFORO','SHOW_GRID','SHOW_HACK'].includes(cmd.act)) {
+                hideAll(); playSound('alarm');
+            }
+
+            if (cmd.act === 'SHOW_BATTLE') document.getElementById('game-batalla').style.display = 'flex';
+            if (cmd.act === 'UPDATE_BATTLE') {
+                document.getElementById('bar-a').style.height = cmd.a + '%'; document.getElementById('score-a').innerText = cmd.a;
+                document.getElementById('bar-b').style.height = cmd.b + '%'; document.getElementById('score-b').innerText = cmd.b;
+            }
+            if (cmd.act === 'WIN_BATTLE') finishGame(true, cmd.msg);
+
+            if (cmd.act === 'START_TURBINE') { turbineVal=0; document.getElementById('game-turbina').style.display = 'flex'; loopTurbina(); }
+            
+            if (cmd.act === 'START_REACTOR') { document.getElementById('game-reactor').style.display = 'flex'; loopReactor(); }
+            if (cmd.act === 'CHECK_REACTOR') {
+                cancelAnimationFrame(gameLoopId);
+                if(needlePos >= 45 && needlePos <= 55) finishGame(true, "¡ESTABILIZADO!"); else finishGame(false, "¡EXPLOSIÓN INMINENTE!");
+            }
+
+            if (cmd.act === 'START_SONAR') { hp=100; document.getElementById('game-sonar').style.display = 'flex'; loopSonar(); }
+
+            if (cmd.act === 'START_SEMAFORO') { trafficVal=0; document.getElementById('game-semaforo').style.display = 'flex'; loopSemaforo(); }
+            if (cmd.act === 'TOGGLE_EYE') {
+                isRed = cmd.state; const eye = document.getElementById('eye'); const msg = document.getElementById('eye-msg');
+                if(isRed) { eye.classList.add('red'); msg.innerText = "¡SHHH! (SILENCIO)"; msg.style.color = "red"; playSound('fail'); } 
+                else { eye.classList.remove('red'); msg.innerText = "¡CORRAN! (RUIDO)"; msg.style.color = "#39ff14"; playSound('click'); }
+            }
+
+            if (cmd.act === 'SHOW_GRID') document.getElementById('game-grid').style.display = 'flex';
+            if (cmd.act === 'GRID_SELECT') {
+                const cell = document.getElementById('cell-' + cmd.idx); cell.classList.add('cell-found');
+                if(cmd.win) finishGame(true, "¡OBJETIVO LOCALIZADO!"); else { playSound('fail'); setTimeout(() => cell.classList.remove('cell-found'), 500); }
+            }
+
+            if (cmd.act === 'SHOW_HACK') document.getElementById('game-hack').style.display = 'flex';
+            if (cmd.act === 'FLASH_COLOR') flashColor(cmd.color, cmd.text);
+        };
+    </script>
 </body>
 </html>
