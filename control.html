@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MASTER CONTROL - ESCAPE ROOM</title>
+    <style>
+        body { background: #1a1a1a; color: #eee; font-family: sans-serif; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 15px; }
+        .panel { background: #2a2a2a; border: 1px solid #444; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        h2 { margin-top: 0; border-bottom: 2px solid #555; padding-bottom: 8px; color: #00f3ff; font-size: 1.2rem; }
+        button { width: 100%; padding: 12px; margin: 4px 0; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; transition: brightness 0.2s; font-size: 0.9rem; }
+        button:hover { brightness: 1.2; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-start { background: #39ff14; color: black; }
+        .btn-stop { background: #ff3131; }
+        .btn-blue { background: #00f3ff; color: black; }
+        .btn-vid { background: #7d3cff; }
+        .grid-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .color-pad { display: flex; gap: 4px; }
+        .panel.important { border-color: #00f3ff; background: #000; }
+        input[type=range] { width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="panel important">
+        <h2>🛠️ CONTROL GLOBAL</h2>
+        <button class="btn-blue" onclick="send('INIT_AUDIO')">🔊 1. ACTIVAR SISTEMA (Crucial)</button>
+        <button class="btn-stop" onclick="send('RESET')">🛑 OCULTAR JUEGOS (Reset)</button>
+        <label style="font-size:0.8rem;">Sensibilidad Micro:</label>
+        <input type="range" min="0.5" max="4.0" step="0.1" value="1.5" oninput="send('SET_SENS',{val:this.value})">
+    </div>
+
+    <div class="panel">
+        <h2>🎬 LANZADOR DE VIDEOS</h2>
+        <button class="btn-vid" onclick="send('PLAY_VIDEO', {name:'intro_loop', loop:true})">▶ Loop Intro (Hack)</button>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-start" onclick="send('PLAY_VIDEO', {name:'nivel1_exito', loop:false})">✅ Éxito N1</button>
+            <button class="btn-stop" onclick="send('PLAY_VIDEO', {name:'nivel1_fail', loop:false})">❌ Fallo N1</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>1. Batalla Ruido (Votación)</h2>
+        <button class="btn-start" onclick="send('SHOW_BATTLE')">Mostrar Barras</button>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-blue" onmousedown="startBattle('A')" onmouseup="stopBattleLocal()">Gritar A (Hold)</button>
+            <button class="btn-stop" onmousedown="startBattle('B')" onmouseup="stopBattleLocal()">Gritar B (Hold)</button>
+        </div>
+        <button class="btn-start" onclick="finishBattle()">Terminar & Mostrar Ganador</button>
+    </div>
+
+    <div class="panel">
+        <h2>2. Turbina (Aplausos)</h2>
+        <button class="btn-start" onclick="send('START_TURBINE')">▶ Iniciar Carga</button>
+    </div>
+
+    <div class="panel">
+        <h2>3. Reactor (Timing)</h2>
+        <button class="btn-start" onclick="send('START_REACTOR')">▶ Iniciar Aguja</button>
+        <button class="btn-stop" onclick="send('CHECK_REACTOR')" style="height: 50px; font-size: 1.1rem;">⚡ ¡DETENER YA! (Espacio)</button>
+    </div>
+
+    <div class="panel">
+        <h2>4. Sonar (Control Voz)</h2>
+        <button class="btn-start" onclick="send('START_SONAR')">▶ Iniciar Navegación</button>
+    </div>
+
+    <div class="panel">
+        <h2>5. Semáforo (Terror)</h2>
+        <button class="btn-start" onclick="send('START_SEMAFORO')">▶ Iniciar Juego</button>
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <button class="btn-start" onclick="send('TOGGLE_EYE', {state:false})">VERDE (Corran)</button>
+            <button class="btn-stop" onclick="send('TOGGLE_EYE', {state:true})">ROJA (Silencio)</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>6. Francotirador (Grid)</h2>
+        <button class="btn-start" onclick="send('SHOW_GRID')">Mostrar Rejilla</button>
+        <p style="margin:5px 0; font-size:0.8rem;">Click en el que griten:</p>
+        <div class="grid-pad">
+            <button style="background:#444;" onclick="gridClick(0)">A1</button><button style="background:#444;" onclick="gridClick(1)">A2</button><button style="background:#444;" onclick="gridClick(2)">A3</button>
+            <button style="background:#444;" onclick="gridClick(3)">B1</button><button style="background:#555; border:2px solid #00f3ff;" onclick="gridClick(4, true)">B2 (OK)</button><button style="background:#444;" onclick="gridClick(5)">B3</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>7. Hackeo (Memoria)</h2>
+        <button class="btn-start" onclick="send('SHOW_HACK')">Activar Pantalla</button>
+        <div class="color-pad" style="margin-top:10px;">
+            <button style="background:red; color:white;" onclick="flash('red', 'ROJO')">R</button>
+            <button style="background:blue; color:white;" onclick="flash('blue', 'AZUL')">A</button>
+            <button style="background:yellow; color:black;" onclick="flash('yellow', 'AMARILLO')">Y</button>
+            <button style="background:#39ff14; color:black;" onclick="flash('#39ff14', 'VERDE')">V</button>
+        </div>
+    </div>
+
+    <script>
+        const channel = new BroadcastChannel('escape_room_master');
+        function send(act, data = {}) { channel.postMessage({ act: act, ...data }); }
+
+        // LÓGICA LOCAL BATALLA (Simulada para el ejemplo)
+        let battleInt; let scoreA = 0, scoreB = 0;
+        function startBattle(team) {
+            battleInt = setInterval(() => {
+                if(team === 'A') scoreA += 3; else scoreB += 3;
+                scoreA = Math.min(scoreA, 100); scoreB = Math.min(scoreB, 100);
+                send('UPDATE_BATTLE', { a: scoreA, b: scoreB });
+            }, 50);
+        }
+        function stopBattleLocal() { clearInterval(battleInt); }
+        function finishBattle() {
+            let winner = scoreA > scoreB ? "¡GANA OPCIÓN A!" : (scoreB > scoreA ? "¡GANA OPCIÓN B!" : "¡EMPATE!");
+            send('WIN_BATTLE', { msg: winner }); scoreA = 0; scoreB = 0;
+        }
+
+        // LÓGICA LOCAL GRID
+        function gridClick(idx, isWin = false) { send('GRID_SELECT', { idx: idx, win: isWin }); }
+        // LÓGICA LOCAL HACKEO
+        function flash(col, txt) { send('FLASH_COLOR', { color: col, text: txt }); }
+
+        // ATAJOS DE TECLADO
+        document.addEventListener('keydown', (e) => {
+            if(e.code === 'Space') send('CHECK_REACTOR'); // Barra espaciadora para el Reactor
+        });
+    </script>
+</body>
+</html>
